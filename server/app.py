@@ -72,17 +72,7 @@ def check_water_harvesting_score(location: LocationRequest):
     longitude = location.longitude
     return calculate_water_harvesting_score(latitude, longitude)
 
-
-
-
-
-
-
-
-
 # Wind 
-
-
 @app.post("/check_wind_farm")
 def check_wind_farm(location: LocationRequest):
     latitude = location.latitude
