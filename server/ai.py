@@ -1,39 +1,56 @@
-import google.generativeai as genai
-from fastapi import HTTPException
+from google.generativeai import configure, GenerativeModel
+from dotenv import load_dotenv
 import os
 
-genai.configure(api_key=os.getenv('GEMINI_API_KEY')) 
-model = genai.GenerativeModel('gemini-1.5-flash')
+load_dotenv()
+
+api_key = os.getenv("API_KEY")
+
+configure(api_key=api_key)
 
 
-global_context = """
-Generate a structured sustainability report in a professional format with a table for the following data. Include a title, reporting period (use "2024" as the year), location (use "Site Assessment Area" if not specified), and detailed analysis. Format the report clearly with headings and bullet points where necessary.
-Structure the report as follows:
-1. **Title**: Sustainability Assessment Report  
-2. **Location**: Latitude & Longitude 
-3. **Executive Summary** (Brief overview of findings)  
-4. **Detailed Analysis** (Breakdown of solar, wind, water, green and barren/open area feasibility in a table + explanations)  
-5. **Recommendations** (Based on the data)  
-
-Make sure to provide all important details of input json properly
-Ensure no placeholder text like "[Insert...]" appears. Use exact values from the data.
-### Input JSON:
-"""
-models = genai.list_models()
-for model in models:
-    print(model.name, model.supported_generation_methods)
-
-def get_summary(data:str):
-    """Fetch a summary from Gemini API"""
+def analyze_with_gemini(data: dict) -> str:
+    """Analyze sustainability data using Gemini 2.0 Flash and return recommendations."""
     try:
-        global global_context
-        prompt = f"{global_context}\n{data}"
-        models = genai.list_models()
-        print("data = ", data)
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        model = GenerativeModel("gemini-2.0-flash")
+        
+        # Format the data as a prompt
+        prompt = f"""
+        You are an AI assistant for the Sustainability Analysis Platform. Below is a sustainability report for a specific location. Analyze the data and provide actionable recommendations to improve sustainability in the areas of solar potential, afforestation, water harvesting, and windmill feasibility. Be concise, professional, and focus on practical steps. Format the response exactly as follows, with one recommendation per bullet point:
+
+        **Solar Energy:**
+        * Recommendation for solar energy
+        **Afforestation:**
+        * Recommendation for afforestation
+        **Water Harvesting:**
+        * Recommendation for water harvesting
+        **Wind Energy:**
+        * Recommendation for wind energy
+
+        Data:
+        - Solar Potential:
+          - Average Radiation: {data['solar_potential']['average_radiation']} kWh/m²/day
+          - Result: {data['solar_potential']['result']}
+        - Afforestation Feasibility:
+          - Green Cover: {data['afforestation_feasibility']['green_cover_percent']}%
+          - Barren Land: {data['afforestation_feasibility']['barren_land_percent']}%
+          - Afforestation Potential: {data['afforestation_feasibility']['afforestation_potential_percent']}%
+          - Feasibility: {data['afforestation_feasibility']['feasibility']}
+        - Water Harvesting:
+          - Rainfall Score: {data['water_harvesting']['rainfall_score']}
+          - Soil Score: {data['water_harvesting']['soil_score']}
+          - Slope Score: {data['water_harvesting']['slope_score']}
+          - Water Harvesting Score: {data['water_harvesting']['water_harvesting_score']}
+          - Feasibility: {data['water_harvesting']['feasibility']}
+        - Windmill Feasibility:
+          - Wind Score: {data['windmill_feasibility']['wind_score']}
+          - Slope Score: {data['windmill_feasibility']['slope_score']}
+          - Land Score: {data['windmill_feasibility']['land_score']}
+          - Windmill Feasibility Score: {data['windmill_feasibility']['windmill_feasibility_score']}
+          - Feasibility: {data['windmill_feasibility']['feasibility']}
+        """
+        
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-         raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
-
-        
+        return f"Error analyzing data with Gemini: {str(e)}"

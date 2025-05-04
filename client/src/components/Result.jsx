@@ -1,93 +1,191 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function Result() {
   const location = useLocation();
-  const data = location.state?.result;
-  const summaryLink = location.state?.summaryLink;  // The link to the generated PDF
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!data) {
-      setError('No data to display.');
-    }
-  }, [data]);
-
-  // Function to trigger download
-  const handleDownload = () => {
-    setLoading(true);
-    try {
-      const link = document.createElement('a');
-      link.href = summaryLink;
-      link.download = 'sustainability_report.pdf'; // Download the PDF
-      link.click();
-    } catch (e) {
-      setError('Error downloading the report.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const navigate = useNavigate();
+  const data = location.state?.data;
 
   if (!data) {
-    return <div className="text-center text-gray-500">No data to display.</div>;
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <p className="text-red-500 text-lg">No data available. Please try again.</p>
+      </div>
+    );
   }
 
-  const { solar, wind, water, green } = data;
+  const { report, recommendations } = data;
+
+
+  // Parse recommendations into sections
+  const parseRecommendations = (text) => {
+    const sections = [];
+    let currentSection = null;
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+
+    lines.forEach((line, index) => {
+      // Skip the first line if it's the title 
+      if (index === 0 && line.includes('AI Recommendations')) {
+        return;
+      }
+      // Check for section headers (e.g., "**Solar Energy:**")
+      if (line.startsWith('**') && line.endsWith(':**')) {
+        if (currentSection && currentSection.items.length > 0) {
+          sections.push(currentSection);
+        }
+        currentSection = {
+          title: line.replace(/\*\*/g, '').replace(':', ''),
+          items: [],
+        };
+      }
+      // Treat non-header, non-empty lines as items under the current section
+      else if (currentSection && line !== '') {
+        // Remove leading bullet markers if present
+        const itemText = line.startsWith('*') || line.startsWith('-') ? line.slice(2).trim() : line;
+        if (itemText) {
+          currentSection.items.push(itemText);
+        }
+      }
+    });
+
+    if (currentSection && currentSection.items.length > 0) {
+      sections.push(currentSection);
+    }
+    return sections;
+  };
+
+  const recommendationSections = parseRecommendations(recommendations);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Sustainability Result</h1>
+    <div className="min-h-screen bg-gray-100 py-8 px-4">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-4xl font-bold text-green-700 text-center mb-8">
+          Sustainability Analysis Report
+        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Solar Potential */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold text-green-600 mb-4">Solar Potential</h2>
+            <div className="space-y-2">
+              <p className="text-gray-700">
+                <span className="font-medium">Average Radiation:</span>{' '}
+                {report.solar_potential.average_radiation} kWh/m²/day
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Result:</span> {report.solar_potential.result}
+              </p>
+            </div>
+          </div>
 
-      {/* Solar Energy */}
-      <div className="mb-4 p-4 border shadow-lg">
-        <h2 className="text-xl font-semibold">🌞 Solar</h2>
-        <p><strong>Potential:</strong> {solar.value}</p>
-        <p className={solar.result.includes("❌") ? "text-red-600" : "text-green-600"}>{solar.result}</p>
+          {/* Afforestation Feasibility */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold text-green-600 mb-4">Afforestation Feasibility</h2>
+            <div className="space-y-2">
+              <p className="text-gray-700">
+                <span className="font-medium">Green Cover:</span>{' '}
+                {report.afforestation_feasibility.green_cover_percent}%
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Barren Land:</span>{' '}
+                {report.afforestation_feasibility.barren_land_percent}%
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Afforestation Potential:</span>{' '}
+                {report.afforestation_feasibility.afforestation_potential_percent}%
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Feasibility:</span>{' '}
+                {report.afforestation_feasibility.feasibility}
+              </p>
+            </div>
+          </div>
+
+          {/* Water Harvesting */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold text-green-600 mb-4">Water Harvesting</h2>
+            <div className="space-y-2">
+              <p className="text-gray-700">
+                <span className="font-medium">Rainfall Score:</span>{' '}
+                {report.water_harvesting.rainfall_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Soil Score:</span> {report.water_harvesting.soil_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Slope Score:</span> {report.water_harvesting.slope_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Water Harvesting Score:</span>{' '}
+                {report.water_harvesting.water_harvesting_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Feasibility:</span>{' '}
+                {report.water_harvesting.feasibility}
+              </p>
+            </div>
+          </div>
+
+          {/* Windmill Feasibility */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold text-green-600 mb-4">Windmill Feasibility</h2>
+            <div className="space-y-2">
+              <p className="text-gray-700">
+                <span className="font-medium">Wind Score:</span>{' '}
+                {report.windmill_feasibility.wind_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Slope Score:</span>{' '}
+                {report.windmill_feasibility.slope_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Land Score:</span>{' '}
+                {report.windmill_feasibility.land_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Windmill Feasibility Score:</span>{' '}
+                {report.windmill_feasibility.windmill_feasibility_score}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Feasibility:</span>{' '}
+                {report.windmill_feasibility.feasibility}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recommendations */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-semibold text-green-600 mb-4">
+            AI Recommendations
+          </h2>
+          {recommendationSections.length > 0 ? (
+            <div className="space-y-6">
+              {recommendationSections.map((section, index) => (
+                <div key={index}>
+                  <h3 className="text-xl font-medium text-gray-800 mb-2">{section.title}</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                    {section.items.map((item, itemIndex) => (
+                      <li key={itemIndex}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No recommendations available.</p>
+          )}
+        </div>
+
+        {/* Back Button */}
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => navigate('/')}
+            className="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 transition duration-200"
+          >
+            Back to Map
+          </button>
+        </div>
       </div>
-
-      {/* Wind Energy */}
-      <div className="mb-4 p-4 border shadow-lg">
-        <h2 className="text-xl font-semibold">💨 Wind</h2>
-        <p><strong>Status:</strong> {wind.status}</p>
-        <p>{wind.message}</p>
-      </div>
-
-      {/* Water Harvesting */}
-      <div className="mb-4 p-4 border shadow-lg">
-        <h2 className="text-xl font-semibold">💧 Water Harvesting</h2>
-        <ul className="list-disc ml-6">
-          <li><strong>Rainfall Score:</strong> {water.rainfall_score}</li>
-          <li><strong>Soil Score:</strong> {water.soil_score}</li>
-          <li><strong>Slope Score:</strong> {water.slope_score}</li>
-          <li><strong>Water Harvesting Score:</strong> {water.water_harvesting_score}</li>
-        </ul>
-      </div>
-
-      {/* Green Cover */}
-      <div className="mb-4 p-4 border shadow-lg">
-        <h2 className="text-xl font-semibold">🌿 Green Cover</h2>
-        <p><strong>Green Coverage:</strong> {green.green_coverage}%</p>
-        <p><strong>Barren Coverage:</strong> {green.barren_coverage}%</p>
-        <p className={green.is_feasible ? "text-green-600" : "text-red-600"}>
-          {green.is_feasible ? "✅ Suitable for Afforestation" : "❌ Not Suitable"}
-        </p>
-      </div>
-
-      {/* Download PDF Button */}
-      <div className="text-center mt-6">
-        <button
-          onClick={handleDownload}
-          className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          disabled={loading}
-        >
-          {loading ? "Downloading..." : "Download Report (PDF)"}
-        </button>
-      </div>
-
-      {/* Error message */}
-      {error && <div className="text-center text-red-600 mt-4">{error}</div>}
     </div>
   );
 }
