@@ -60,7 +60,7 @@ Google_Project='YOUR_GOOGLE_PROJECT_NAME'
 
 **Start the backend server:**  
 ```bash
-uvicorn main:app --reload
+uvicorn app:app --reload
 ```
 
 **Navigate to the client directory and install dependencies:**  

@@ -10,8 +10,9 @@ def calculate_windmill_feasibility(location: LocationInput):
     lon = location.longitude
 
     wind_score = get_nasa_wind_speed_data(lat, lon)
-    slope_score=max(1.0 - (get_slope(lat, lon) / 15.0), 0.0) if get_slope(lat, lon) <= 15 else 0.0
-    ndvi_data = get_ndvi_data(lat, lon, 2000)
+    slope_raw = get_slope(lat, lon) * 45 
+    slope_score = max(1.0 - (slope_raw / 15.0), 0.0) if slope_raw <= 15 else 0.0
+    ndvi_data = get_ndvi_data(lat, lon, 3500)
     land_score = ndvi_data["barren_cover"] if ndvi_data and ndvi_data["barren_cover"] is not None else 0.0
 
     final_score = (0.5 * wind_score) + (0.3 * slope_score) + (0.2 * land_score)

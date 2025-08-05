@@ -23,7 +23,7 @@ NASA_API_URL = "https://power.larc.nasa.gov/api/temporal"
 _cache: Dict[str, Dict] = {}
 
 def _generate_cache_key(lat: float, lon: float, data_type: str) -> str:
-    """Generate a unique cache key based on coordinates and data type."""
+    """Generate a unique cache key based on coordinates and data type"""
     return f"{lat}_{lon}_{data_type}"
 
 def get_nasa_rainfall_data(lat: float, lon: float) -> float:
@@ -145,7 +145,6 @@ def get_soil_texture(lat: float, lon: float) -> float:
     cache_key = _generate_cache_key(lat, lon, "soil_texture")
     if cache_key in _cache:
         return _cache[cache_key]
-
     try:
         soil_value = ee.Image("OpenLandMap/SOL/SOL_TEXTURE-CLASS_USDA-TT_M/v02") \
             .select('b0') \

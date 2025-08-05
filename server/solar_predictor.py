@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from data_loader import get_nasa_solar_data
 from catboost import CatBoostRegressor
 from sklearn.model_selection import train_test_split
+import numpy as np;
+import pandas as pd;
 
 class LocationInput(BaseModel):
     latitude: float
@@ -35,18 +37,25 @@ def predict_solar(input_data: LocationInput):
         return {"message": "Failed to fetch NASA data."}
 
     model = train_catboost(df)
-    target_year = 2024
-    data_points = df[df['Year'] == target_year]
-    if data_points.empty:
-        return {"message": "No data available for the year 2024."}
-
+    future_dates = pd.date_range(start="2025-01-01", end="2025-12-31", freq='D')
+    future_df = pd.DataFrame({"Date": future_dates})
+    future_df['Year'] = future_df['Date'].dt.year
+    future_df['Month'] = future_df['Date'].dt.month
+    future_df['DayOfYear'] = future_df['Date'].dt.dayofyear
+    future_df['Day_Sin'] = np.sin(2 * np.pi * future_df['DayOfYear'] / 365)
+    future_df['Day_Cos'] = np.cos(2 * np.pi * future_df['DayOfYear'] / 365)
+    future_df['CLRSKY_SFC_SW_DWN'] = df['CLRSKY_SFC_SW_DWN'].mean()
+    future_df['T2M'] = df['T2M'].mean()
+    future_df['SWDWN_7d_avg'] = df['SWDWN_7d_avg'].mean()
+    future_df['SWDWN_30d_avg'] = df['SWDWN_30d_avg'].mean()
+    future_df['T2M_7d_avg'] = df['T2M_7d_avg'].mean()
     features = [
         'Year', 'Month', 'DayOfYear',
         'CLRSKY_SFC_SW_DWN', 'T2M',
         'Day_Sin', 'Day_Cos',
         'SWDWN_7d_avg', 'SWDWN_30d_avg', 'T2M_7d_avg'
     ]
-    predictions = model.predict(data_points[features])
+    predictions = model.predict(future_df[features])
     yearly_average = max(0, predictions.mean())
 
     if yearly_average > 5.0:

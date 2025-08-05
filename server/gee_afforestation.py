@@ -8,7 +8,7 @@ class LocationInput(BaseModel):
 def analyze_afforestation(input_data: LocationInput):
     lat = input_data.latitude
     lon = input_data.longitude
-    radius = 5000  # 5 km radius
+    radius = 3500 
 
     try:
         ndvi_data = get_ndvi_data(lat, lon, radius)
