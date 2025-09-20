@@ -153,7 +153,7 @@ def get_soil_texture(lat: float, lon: float) -> float:
                 geometry=ee.Geometry.Point([lon, lat]),
                 scale=30
             ).get('b0').getInfo()
-        result = 0.0 if soil_value is None or soil_value < 0 else min(soil_value / 100, 1.0)
+        result = 0.0 if soil_value is None or soil_value < 0 else min(soil_value / 12, 1.0)
         _cache[cache_key] = result
         return result
     except Exception:

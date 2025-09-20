@@ -12,8 +12,7 @@ def calculate_water_harvesting_score(input_data: LocationInput):
     rainfall_score = get_nasa_rainfall_data(lat, lon)
     soil_score = get_soil_texture(lat, lon)
     slope_score = get_slope(lat, lon)
-
-    final_score = (0.5 * rainfall_score) + (0.3 * soil_score) + (0.2 * slope_score)
+    final_score = (0.5 * rainfall_score) + (0.2 * soil_score) + (0.3 * (1.0-slope_score))
 
     if final_score >= 0.6:
         feasibility = "✅ Water harvesting is feasible in this area."
@@ -25,7 +24,7 @@ def calculate_water_harvesting_score(input_data: LocationInput):
     return {
         "rainfall_score": round(rainfall_score, 2),
         "soil_score": round(soil_score, 2),
-        "slope_score": round(slope_score, 2),
+        "slope_score": round(1.0-slope_score, 2),
         "water_harvesting_score": round(final_score, 2),
         "feasibility": feasibility
     }
